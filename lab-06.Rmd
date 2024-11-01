@@ -28,9 +28,47 @@ diamonds <- diamonds %>% rename(
 
 ```{r}
 # Do some preliminary investigations & cleaning
+diamonds %>%
+  summarise(across(c(carat:depth_mm), mean, na.rm = TRUE))
 
+# 1. Length vs Depth (Scatter plot)
+ggplot(diamonds, aes(x = length_mm, y = depth_mm)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  labs(title = "Length vs Depth", x = "Length (mm)", y = "Depth (mm)")
 
+# 2. Length vs Width (Scatter plot)
+ggplot(diamonds, aes(x = length_mm, y = width_mm)) +
+  geom_point(alpha = 0.5, color = "green") +
+  labs(title = "Length vs Width", x = "Length (mm)", y = "Width (mm)")
 
+# 3. Carat vs Price (Line graph)
+ggplot(diamonds, aes(x = carat, y = price)) +
+  geom_line(color = "purple") +
+  labs(title = "Carat vs Price", x = "Carat", y = "Price")
+
+# 4. Carat and Cut (Bar graph)
+ggplot(diamonds, aes(x = cut, y = carat)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "orange") +
+  labs(title = "Average Carat by Cut", x = "Cut", y = "Average Carat")
+
+# 5. Clarity and Carat (Bar graph)
+ggplot(diamonds, aes(x = clarity, y = carat)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "pink") +
+  labs(title = "Average Carat by Clarity", x = "Clarity", y = "Average Carat")
+
+# 6. Summary of Average Price by Color
+avg_price_by_color <- diamonds %>%
+  group_by(color) %>%
+  summarise(avg_price = mean(price, na.rm = TRUE))
+
+# Summary of Average Price by Cut
+avg_price_by_cut <- diamonds %>%
+  group_by(cut) %>%
+  summarise(avg_price = mean(price, na.rm = TRUE))
+
+# Display summaries
+print(avg_price_by_color)
+print(avg_price_by_cut)
 
 ```
 
@@ -43,13 +81,17 @@ diamonds <- diamonds %>%
   mutate(table_mm = table_pct * width_mm / 100)
 
 # Overall table_mm arithmetic mean?
-
+diamonds %>%
+  summarise(mean_table_mm = mean(table_mm, na.rm = TRUE))
 
 
 
 
 
 # table_mm arithmetic mean within each clarity category
+diamonds %>%
+  group_by(clarity) %>%
+  summarise(mean_table_mm = mean(table_mm, na.rm = TRUE))
 
 
 
@@ -58,12 +100,16 @@ diamonds <- diamonds %>%
 
 ```
 
-_Add your comment here_
+Lower clarity grades (like I1 and SI2) tend to have larger average table lengths, with I1 having the highest average table length of approximately 3.91 mm.
+Higher clarity grades (like VVS1 and IF) have smaller average table lengths, with IF having one of the smallest averages at ar
 
 ```{r}
 # calculate the arithmetic mean across all numeric variables
 
+diamonds_summary <- diamonds %>%
+  summarise(across(where(is.numeric), mean, na.rm = TRUE, .names = "avg_{.col}"))
 
+diamonds_summary
 
 
 ```
@@ -72,7 +118,25 @@ _Add your comment here_
 
 ```{r}
 # Write gmean() command
-
+gmean <- function(x) {
+  # Ensure the input is numeric
+  if (!is.numeric(x) || length(x) == 0) {
+    stop("Input must be a numeric vector with positive values.")
+  }
+  
+  # Check if there are any non-positive values
+  if (any(x <= 0)) {
+    stop("All values must be positive to compute the geometric mean.")
+  }
+  
+  # Remove any NA values in x
+  x <- na.omit(x)
+  
+  # Calculate the geometric mean using the logarithmic formula
+  geometric_mean <- exp(mean(log(x)))
+  
+  return(geometric_mean)
+}
 
 
 ```
@@ -93,6 +157,15 @@ test_data <- list(
 
 # Create for loop to test gmean() on the above examples
 
+for(i in seq_along(test_data)){
+  cat("Testing gmean on test_data[[", i, "]]:", sep = "")
+  tryCatch({
+    result <- gmean(test_data[[i]])
+    print(result)
+  }, error = function(e) {
+    print(e$message)
+  })
+}
 
 ```
 
